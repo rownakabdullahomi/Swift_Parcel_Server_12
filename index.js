@@ -36,6 +36,23 @@ async function run() {
     // await client.connect();
     // Send a ping to confirm a successful connection
 
+    const userCollection = client.db("swiftParcelDB").collection("users");
+
+
+    // user related apis
+    app.post("/users", async (req, res) => {
+        const user = req.body;
+        // check if the user already exists...
+        const query = { email: user.email }
+        const existingUser = await userCollection.findOne(query);
+  
+        if (existingUser) {
+          return res.send({ message: "user already exists", insertedId: null });
+        }
+        const result = await userCollection.insertOne({...user, timestamp: Date.now()});
+        res.send(result);
+      })
+
 
 
 
