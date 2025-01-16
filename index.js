@@ -2,7 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 5000
 const app = express()
@@ -41,34 +41,79 @@ async function run() {
 
 
     // user related apis
+
+    // get all user
+    app.get("/all/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
+
     app.post("/users", async (req, res) => {
-        const user = req.body;
-        // check if the user already exists...
-        const query = { email: user.email }
-        const existingUser = await userCollection.findOne(query);
+      const user = req.body;
+      // check if the user already exists...
+      const query = { email: user.email }
+      const existingUser = await userCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: "user already exists", insertedId: null });
+      }
+      const result = await userCollection.insertOne({ ...user, timestamp: Date.now() });
+      res.send(result);
+    })
+
+    // get a specific user data
+    app.get("/user/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email }
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    })
+
+
+    // parcel related apis
+
+    // get all parcels
+    app.get("/all/parcels", async (req, res) => {
+      const result = await parcelCollection.find().toArray();
+      res.send(result);
+    })
+
+    // get all parcels of a specific user
+    app.get("/all/parcels/:email", async(req, res) => {
+      const email = req.params.email;
+      const query = {email};
+      const result = await parcelCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
+    app.post("/book/parcel", async (req, res) => {
+      const parcel = req.body;
+      const result = await parcelCollection.insertOne({ ...parcel, bookingDate: new Date() });
+      res.send(result);
+    })
+
+
   
-        if (existingUser) {
-          return res.send({ message: "user already exists", insertedId: null });
+    // Update a selected parcel status and add deliveryManId, approximateDate
+    app.put(
+      '/admin/update/parcel/:id',
+      async (req, res) => {
+        const id = req.params.id;
+        const { selectedDeliveryManId, approximateDate} = req.body;
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = {
+          $set: { 
+            approximateDate,
+            deliveryManId: selectedDeliveryManId,
+            status: "on the way", 
+            },
         }
-        const result = await userCollection.insertOne({...user, timestamp: Date.now()});
-        res.send(result);
-      })
-
-      // get a specific user data
-      app.get("/user/role/:email", async (req, res) => {
-        const email = req.params.email;
-        const query = { email }
-        const result = await userCollection.findOne(query);
-        res.send(result);
-      })
-
-
-      // parcel related apis
-      app.post("/book/parcel", async (req,res) => {
-        const parcel = req.body;
-        const result = await parcelCollection.insertOne(parcel);
-        res.send(result);
-      })
+        const result = await parcelCollection.updateOne(query, updateDoc)
+        res.send(result)
+      }
+    )
 
 
 
@@ -98,13 +143,13 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Hello from SwiftParcel Server..')
-  })
-  
-  app.listen(port, () => {
-    console.log(`SwiftParcel is running on port ${port}`)
-  })
-  
+  res.send('Hello from SwiftParcel Server..')
+})
+
+app.listen(port, () => {
+  console.log(`SwiftParcel is running on port ${port}`)
+})
+
 
 
 
