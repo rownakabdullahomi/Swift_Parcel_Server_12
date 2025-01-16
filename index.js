@@ -37,6 +37,7 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const userCollection = client.db("swiftParcelDB").collection("users");
+    const parcelCollection = client.db("swiftParcelDB").collection("parcels");
 
 
     // user related apis
@@ -62,7 +63,12 @@ async function run() {
       })
 
 
-
+      // parcel related apis
+      app.post("/book/parcel", async (req,res) => {
+        const parcel = req.body;
+        const result = await parcelCollection.insertOne(parcel);
+        res.send(result);
+      })
 
 
 
