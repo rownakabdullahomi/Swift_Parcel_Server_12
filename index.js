@@ -48,14 +48,21 @@ async function run() {
       res.send(result);
     })
 
-    // get all user except current user
+    // get all user except current user and delivery man
     app.get("/all/users/:email", async (req, res) => {
       const email = req.params.email;
-      // Query to exclude the current user
-    const query = { email: { $ne: email } };
-      const result = await userCollection.find().toArray();
+
+      // Query to exclude the current user and only include users with userType "User"
+      const query = {
+        $and: [
+          { email: { $ne: email } }, // Exclude the current user
+          { userType: "User" }, // Include only users with userType "User"
+        ],
+      };
+
+      const result = await userCollection.find(query).toArray();
       res.send(result);
-    })
+    });
 
 
     app.post("/users", async (req, res) => {
@@ -79,6 +86,16 @@ async function run() {
       res.send(result);
     })
 
+    // Update user role
+    app.patch("/user/update/role/:id", async (req, res) => {
+      const id = req.params.id;
+      const { userType } = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = { $set: { userType } };
+      const result = await userCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
     // get a specific user data
     // app.get("/user/:id", async (req, res) => {
     //   const id = req.params.id;
@@ -87,26 +104,81 @@ async function run() {
     //   res.send(result);
     // })
 
+
+    app.get("/all/users-with-parcels/:email", async (req, res) => {
+      const email = req.params.email;
+
+      // Query to exclude the current user and only include userType "User"
+      const usersQuery = {
+        $and: [{ email: { $ne: email } }, { userType: "User" }],
+      };
+
+      // Get all users
+      const users = await userCollection.find(usersQuery).toArray();
+
+      // Aggregate parcels count and total spent amount for each user
+      const parcelsAggregation = await parcelCollection
+        .aggregate([
+          {
+            $group: {
+              _id: "$email", // Group parcels by email
+              parcelsBooked: { $sum: 1 }, // Count parcels for each user
+              totalSpent: { $sum: "$price" }, // Total spent amount for each user's parcels
+            },
+          },
+        ])
+        .toArray();
+
+      // Merge parcels count and total spent with users
+      const usersWithParcels = users.map((user) => {
+        const parcelData = parcelsAggregation.find(
+          (parcel) => parcel._id === user.email // Match parcel.email with user.email
+        );
+        return {
+          ...user,
+          parcelsBooked: parcelData ? parcelData.parcelsBooked : 0,
+          totalSpent: parcelData ? parcelData.totalSpent : 0,
+        };
+      });
+
+      res.send(usersWithParcels);
+    });
+
+
+
+
+
     // Update a specific user
     app.patch(
-      '/user/update/profile/:id',
+      '/user/update/profile/:email',
       async (req, res) => {
-        const id = req.params.id;
+        const email = req.params.email;
         const { name, photoURL } = req.body;
         // Filter out null or undefined fields from the update
         const updateFields = {};
         if (name) updateFields.name = name;
         if (photoURL) updateFields.photoURL = photoURL;
-        const query = { _id: new ObjectId(id) }
+        const query = { email }
         const updateDoc = { $set: updateFields };
-        const result = await userCollection.updateOne(query, updateDoc)
+        const result = await userCollection.updateOne(query, updateDoc);
+
+        // If the name is updated, also update it in parcelCollection
+        if (name) {
+          const user = await userCollection.findOne(query);
+
+            const parcelQuery = { email: user.email }; // Find parcels by user email
+            const parcelUpdateDoc = { $set: { name: name } }; // Update name in parcels
+            const parcelUpdateResult = await parcelCollection.updateMany(parcelQuery, parcelUpdateDoc);
+            console.log(`${parcelUpdateResult.modifiedCount} parcels updated.`);
+          
+        }
         res.send(result)
       }
     )
 
     // get all delivery man
-    app.get("admin/all/deliveryMan", async (req, res)=>{
-      const query = {userType: "DeliveryMan"};
+    app.get("/all/deliveryMan", async (req, res) => {
+      const query = { userType: "DeliveryMan" };
       const result = await userCollection.find(query).toArray();
       res.send(result);
     })
