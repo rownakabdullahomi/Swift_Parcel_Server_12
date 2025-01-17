@@ -48,6 +48,15 @@ async function run() {
       res.send(result);
     })
 
+    // get all user except current user
+    app.get("/all/users/:email", async (req, res) => {
+      const email = req.params.email;
+      // Query to exclude the current user
+    const query = { email: { $ne: email } };
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    })
+
 
     app.post("/users", async (req, res) => {
       const user = req.body;
@@ -94,6 +103,14 @@ async function run() {
         res.send(result)
       }
     )
+
+    // get all delivery man
+    app.get("admin/all/deliveryMan", async (req, res)=>{
+      const query = {userType: "DeliveryMan"};
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    })
+
 
     // parcel related apis
 
@@ -198,6 +215,7 @@ async function run() {
       const result = await parcelCollection.updateOne(query, updateDoc)
       res.send(result)
     })
+
 
 
 
