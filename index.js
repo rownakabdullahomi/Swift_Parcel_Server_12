@@ -70,6 +70,30 @@ async function run() {
       res.send(result);
     })
 
+    // get a specific user data
+    // app.get("/user/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: new ObjectId(id) }
+    //   const result = await userCollection.findOne(query);
+    //   res.send(result);
+    // })
+
+    // Update a specific user
+    app.patch(
+      '/user/update/profile/:id',
+      async (req, res) => {
+        const id = req.params.id;
+        const { name, photoURL } = req.body;
+        // Filter out null or undefined fields from the update
+        const updateFields = {};
+        if (name) updateFields.name = name;
+        if (photoURL) updateFields.photoURL = photoURL;
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = { $set: updateFields };
+        const result = await userCollection.updateOne(query, updateDoc)
+        res.send(result)
+      }
+    )
 
     // parcel related apis
 
@@ -162,7 +186,7 @@ async function run() {
     )
 
     // Cancel a specific parcel order by user
-    app.patch("/user/cancel/parcel/:id", async(req, res)=>{
+    app.patch("/user/cancel/parcel/:id", async (req, res) => {
       const id = req.params.id;
       const { status } = req.body;
       const query = { _id: new ObjectId(id) }
