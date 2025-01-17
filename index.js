@@ -78,11 +78,18 @@ async function run() {
       const result = await parcelCollection.find().toArray();
       res.send(result);
     })
+    // get a parcel data based on id
+    app.get("/parcel/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await parcelCollection.findOne(query);
+      res.send(result);
+    })
 
     // get all parcels of a specific user
-    app.get("/all/parcels/:email", async(req, res) => {
+    app.get("/all/parcels/:email", async (req, res) => {
       const email = req.params.email;
-      const query = {email};
+      const query = { email };
       const result = await parcelCollection.find(query).toArray();
       res.send(result);
     })
@@ -95,25 +102,78 @@ async function run() {
     })
 
 
-  
+
     // Update a selected parcel status and add deliveryManId, approximateDate
     app.put(
       '/admin/update/parcel/:id',
       async (req, res) => {
         const id = req.params.id;
-        const { selectedDeliveryManId, approximateDate} = req.body;
+        const { selectedDeliveryManId, approximateDate } = req.body;
         const query = { _id: new ObjectId(id) }
         const updateDoc = {
-          $set: { 
+          $set: {
             approximateDate,
             deliveryManId: selectedDeliveryManId,
-            status: "on the way", 
-            },
+            status: "on the way",
+          },
         }
         const result = await parcelCollection.updateOne(query, updateDoc)
         res.send(result)
       }
     )
+
+    // Update a specific parcel data by user
+    app.patch(
+      '/user/update/parcel/:id',
+      async (req, res) => {
+        const id = req.params.id;
+        const { name,
+          email,
+          phone,
+          parcelType,
+          parcelWeight,
+          receiverName,
+          receiverPhone,
+          deliveryAddress,
+          requestedDeliveryDate,
+          latitude,
+          longitude,
+          price, } = req.body;
+        const query = { _id: new ObjectId(id) }
+        const updateDoc = {
+          $set: {
+            name,
+            email,
+            phone,
+            parcelType,
+            parcelWeight,
+            receiverName,
+            receiverPhone,
+            deliveryAddress,
+            requestedDeliveryDate,
+            latitude,
+            longitude,
+            price,
+          },
+        }
+        const result = await parcelCollection.updateOne(query, updateDoc)
+        res.send(result)
+      }
+    )
+
+    // Cancel a specific parcel order by user
+    app.patch("/user/cancel/parcel/:id", async(req, res)=>{
+      const id = req.params.id;
+      const { status } = req.body;
+      const query = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          status
+        },
+      }
+      const result = await parcelCollection.updateOne(query, updateDoc)
+      res.send(result)
+    })
 
 
 
