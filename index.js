@@ -183,6 +183,14 @@ async function run() {
       res.send(result);
     })
 
+    // get add delivery request of a delivery man
+    app.get("/all/deliveryRequests/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { deliveryManId: id, status: "on the way"};
+      const result = await parcelCollection.find(query).toArray();
+      res.send(result);
+    })
+
 
     // parcel related apis
 
@@ -234,6 +242,21 @@ async function run() {
         res.send(result)
       }
     )
+
+
+    // update a parcel status by a delivery man
+    app.put("/deliveryMan/update/parcel/:id", async(req, res) =>{
+      const id = req.params.id;
+      const {status} = req.body;
+      const query = {_id: new ObjectId(id)};
+      const updatedDoc = {
+        $set:{
+          status,
+        }
+      }
+      const result = await parcelCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    })
 
     // Update a specific parcel data by user
     app.patch(
