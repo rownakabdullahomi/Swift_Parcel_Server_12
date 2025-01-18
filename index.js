@@ -274,6 +274,21 @@ async function run() {
       res.send(result);
     })
 
+    // search parcels on requestedDeliveryDate
+    app.get("/parcels/search", async (req, res) => {
+      const { from, to } = req.query;
+      console.log(from, to);
+      const query = {
+        requestedDeliveryDate: {
+          $gte: from, // Greater than or equal to 'from'
+          $lte: to,   // Less than or equal to 'to'
+        },
+      };
+      const parcels = await parcelCollection.find(query).toArray();
+      res.send(parcels);
+    });
+    
+
 
     app.post("/book/parcel", async (req, res) => {
       const parcel = req.body;
