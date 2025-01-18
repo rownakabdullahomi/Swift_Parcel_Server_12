@@ -120,6 +120,12 @@ async function run() {
       res.send(result);
     })
 
+    // Get statistics data
+    app.get("/parcels/statistics", async (req, res) => {
+      const parcels = await parcelCollection.find({}).toArray();
+      res.send(parcels);
+    });
+
     // Update user role
     app.patch("/user/update/role/:id", async (req, res) => {
       const id = req.params.id;
