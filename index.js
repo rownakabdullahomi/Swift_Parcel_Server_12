@@ -191,6 +191,25 @@ async function run() {
       res.send(result);
     })
 
+    // add review and feedback by user
+    app.put("/user/submitReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const { rating, feedback } = req.body;
+    
+        const filter = { _id: new ObjectId(id) };
+        const update = {
+          $set: {
+            rating,
+            feedback,
+          },
+        };
+    
+        const result = await parcelCollection.updateOne(filter, update);
+        res.send(result);
+    
+    });
+    
+
 
     // parcel related apis
 
@@ -310,6 +329,8 @@ async function run() {
       const result = await parcelCollection.updateOne(query, updateDoc)
       res.send(result)
     })
+
+
 
 
 
