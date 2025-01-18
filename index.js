@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const port = process.env.PORT || 5000
@@ -10,10 +11,6 @@ const app = express()
 app.use(cors());
 app.use(express.json())
 app.use(morgan('dev'))
-
-
-
-
 
 
 
@@ -38,6 +35,43 @@ async function run() {
 
     const userCollection = client.db("swiftParcelDB").collection("users");
     const parcelCollection = client.db("swiftParcelDB").collection("parcels");
+
+
+    // Payment
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const paidAmount = parseInt(price * 100); // Amount should be in cents
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: paidAmount, // Amount in cents
+        currency: "usd",
+        payment_method_types: ["card"]
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+
+    });
+
+
+    app.put("/user/updateParcelPayment/:id", async (req, res) => {
+      const parcelId = req.params.id;
+      const { paymentId, paidAmount, paymentStatus } = req.body;
+      const query = { _id: new ObjectId(parcelId) };
+      const updatedDoc = {
+        $set: {
+          paymentId,
+          paidAmount,
+          paymentStatus,
+        }
+      }
+
+      const result = await parcelCollection.updateOne(query, updatedDoc);
+      res.send(result);
+
+    });
+
+
 
 
     // user related apis
@@ -166,11 +200,11 @@ async function run() {
         if (name) {
           const user = await userCollection.findOne(query);
 
-            const parcelQuery = { email: user.email }; // Find parcels by user email
-            const parcelUpdateDoc = { $set: { name: name } }; // Update name in parcels
-            const parcelUpdateResult = await parcelCollection.updateMany(parcelQuery, parcelUpdateDoc);
-            console.log(`${parcelUpdateResult.modifiedCount} parcels updated.`);
-          
+          const parcelQuery = { email: user.email }; // Find parcels by user email
+          const parcelUpdateDoc = { $set: { name: name } }; // Update name in parcels
+          const parcelUpdateResult = await parcelCollection.updateMany(parcelQuery, parcelUpdateDoc);
+          console.log(`${parcelUpdateResult.modifiedCount} parcels updated.`);
+
         }
         res.send(result)
       }
@@ -186,7 +220,7 @@ async function run() {
     // get add delivery request of a delivery man
     app.get("/all/deliveryRequests/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { deliveryManId: id, status: "on the way"};
+      const query = { deliveryManId: id, status: "on the way" };
       const result = await parcelCollection.find(query).toArray();
       res.send(result);
     })
@@ -195,20 +229,20 @@ async function run() {
     app.put("/user/submitReview/:id", async (req, res) => {
       const id = req.params.id;
       const { rating, feedback } = req.body;
-    
-        const filter = { _id: new ObjectId(id) };
-        const update = {
-          $set: {
-            rating,
-            feedback,
-          },
-        };
-    
-        const result = await parcelCollection.updateOne(filter, update);
-        res.send(result);
-    
+
+      const query = { _id: new ObjectId(id) };
+      const update = {
+        $set: {
+          rating,
+          feedback,
+        },
+      };
+
+      const result = await parcelCollection.updateOne(query, update);
+      res.send(result);
+
     });
-    
+
 
 
     // parcel related apis
@@ -264,12 +298,12 @@ async function run() {
 
 
     // update a parcel status by a delivery man
-    app.put("/deliveryMan/update/parcel/:id", async(req, res) =>{
+    app.put("/deliveryMan/update/parcel/:id", async (req, res) => {
       const id = req.params.id;
-      const {status} = req.body;
-      const query = {_id: new ObjectId(id)};
+      const { status } = req.body;
+      const query = { _id: new ObjectId(id) };
       const updatedDoc = {
-        $set:{
+        $set: {
           status,
         }
       }
