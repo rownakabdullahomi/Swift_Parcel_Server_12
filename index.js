@@ -394,6 +394,30 @@ async function run() {
       res.send(result)
     })
 
+    // Statistics API: Get statistics for parcels and users
+app.get("/home/statistics", async (req, res) => {
+
+    // Total number of users
+    const totalUsers = await userCollection.countDocuments();
+
+    // Total number of parcels booked
+    const totalParcelsBooked = await parcelCollection.countDocuments();
+
+    // Total number of parcels delivered
+    const totalParcelsDelivered = await parcelCollection.countDocuments({
+      status: "delivered",
+    });
+    
+    
+    // Send statistics data
+    res.send({
+      totalUsers,
+      totalParcelsBooked,
+      totalParcelsDelivered,
+    });
+  
+});
+
 
 
 
