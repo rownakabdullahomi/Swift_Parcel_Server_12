@@ -229,7 +229,7 @@ async function run() {
       const reviews = await parcelCollection.find({ deliveryManId }).toArray();
       res.send(reviews);
     });
-    
+
 
     // get add delivery request of a delivery man
     app.get("/all/deliveryRequests/:id", async (req, res) => {
@@ -296,7 +296,7 @@ async function run() {
       const parcels = await parcelCollection.find(query).toArray();
       res.send(parcels);
     });
-    
+
 
 
     app.post("/book/parcel", async (req, res) => {
@@ -395,28 +395,73 @@ async function run() {
     })
 
     // Statistics API: Get statistics for parcels and users
-app.get("/home/statistics", async (req, res) => {
+    app.get("/home/statistics", async (req, res) => {
 
-    // Total number of users
-    const totalUsers = await userCollection.countDocuments();
+      // Total number of users
+      const totalUsers = await userCollection.countDocuments();
 
-    // Total number of parcels booked
-    const totalParcelsBooked = await parcelCollection.countDocuments();
+      // Total number of parcels booked
+      const totalParcelsBooked = await parcelCollection.countDocuments();
 
-    // Total number of parcels delivered
-    const totalParcelsDelivered = await parcelCollection.countDocuments({
-      status: "delivered",
+      // Total number of parcels delivered
+      const totalParcelsDelivered = await parcelCollection.countDocuments({
+        status: "delivered",
+      });
+
+
+      // Send statistics data
+      res.send({
+        totalUsers,
+        totalParcelsBooked,
+        totalParcelsDelivered,
+      });
+
     });
-    
-    
-    // Send statistics data
-    res.send({
-      totalUsers,
-      totalParcelsBooked,
-      totalParcelsDelivered,
+
+
+    app.get("/top-delivery-men", async (req, res) => {
+
+      // Fetch all delivery men
+      const deliveryMen = await userCollection.find({ userType: "DeliveryMan" }).toArray();
+
+      const deliveryData = [];
+
+      // Process each delivery man sequentially
+      for (const deliveryMan of deliveryMen) {
+        // Fetch parcels delivered by this delivery man
+        const deliveredParcels = await parcelCollection
+          .find({
+            deliveryManId: deliveryMan._id.toString(),
+            status: "delivered",
+          })
+          .toArray();
+
+        // Calculate the number of parcels delivered
+        const parcelCount = deliveredParcels.length;
+
+        // Calculate the average rating
+        const totalRating = deliveredParcels.reduce((sum, parcel) => {
+          return sum + (parseFloat(parcel.rating) || 0);
+        }, 0);
+        const averageRating = parcelCount > 0 ? totalRating / parcelCount : 0;
+
+        // Add data for this delivery man
+        deliveryData.push({
+          name: deliveryMan.name,
+          photoURL: deliveryMan.photoURL,
+          parcelCount,
+          averageRating,
+        });
+      }
+
+      // Sort the data by parcelCount and averageRating
+      const sortedData = deliveryData
+        .sort((a, b) => b.parcelCount - a.parcelCount || b.averageRating - a.averageRating)
+        .slice(0, 3);
+
+      res.send(sortedData);
     });
-  
-});
+
 
 
 
