@@ -14,9 +14,6 @@ app.use(express.json())
 app.use(morgan('dev'))
 
 
-
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.d3h8n.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -230,9 +227,6 @@ async function run() {
 
       res.send(usersWithParcels);
     });
-
-
-
 
 
     // Update a specific user
@@ -459,7 +453,6 @@ async function run() {
         status: "delivered",
       });
 
-
       // Send statistics data
       res.send({
         totalUsers,
@@ -519,30 +512,14 @@ async function run() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
     // await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
 run().catch(console.dir);
-
-
-
-
-
 
 app.get('/', (req, res) => {
   res.send('Hello from SwiftParcel Server..')
@@ -557,3 +534,6 @@ app.listen(port, () => {
 
 // GitHub Repository Link
 // https://github.com/Programming-Hero-Web-Course4/b10a12-server-side-rownakabdullahomi
+
+// Vercel Live Link
+// https://swift-parcel-server-five.vercel.app
