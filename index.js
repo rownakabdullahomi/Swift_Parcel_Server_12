@@ -223,6 +223,14 @@ async function run() {
       res.send(result);
     })
 
+
+    app.get("/reviews/:deliveryManId", async (req, res) => {
+      const { deliveryManId } = req.params;
+      const reviews = await parcelCollection.find({ deliveryManId }).toArray();
+      res.send(reviews);
+    });
+    
+
     // get add delivery request of a delivery man
     app.get("/all/deliveryRequests/:id", async (req, res) => {
       const id = req.params.id;
@@ -234,13 +242,14 @@ async function run() {
     // add review and feedback by user
     app.put("/user/submitReview/:id", async (req, res) => {
       const id = req.params.id;
-      const { rating, feedback } = req.body;
+      const { rating, feedback, reviewDate } = req.body;
 
       const query = { _id: new ObjectId(id) };
       const update = {
         $set: {
           rating,
           feedback,
+          reviewDate,
         },
       };
 
