@@ -268,7 +268,7 @@ async function run() {
     // get reviews of a delivery man
     app.get("/reviews/:deliveryManId", verifyToken, verifyDeliveryMan, async (req, res) => {
       const { deliveryManId } = req.params;
-      const reviews = await parcelCollection.find({ deliveryManId }).toArray();
+      const reviews = await parcelCollection.find({ deliveryManId, reviewDate: { $exists: true } }).toArray();
       res.send(reviews);
     });
 
