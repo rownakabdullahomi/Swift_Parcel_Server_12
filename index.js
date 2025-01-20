@@ -97,7 +97,7 @@ async function run() {
 
     });
 
-
+    // update payment status in db
     app.put("/user/updateParcelPayment/:id", verifyToken, async (req, res) => {
       const parcelId = req.params.id;
       const { paymentId, paidAmount, paymentStatus } = req.body;
