@@ -309,6 +309,11 @@ async function run() {
       const result = await parcelCollection.find().toArray();
       res.send(result);
     })
+    app.get("/all/reviewed-parcels", async (req, res) => {
+      const query = { rating: { $exists: true, $ne: null } }
+      const result = await parcelCollection.find(query).toArray();
+      res.send(result);
+    })
     // get a parcel data based on id by user
     app.get("/user/parcel/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
